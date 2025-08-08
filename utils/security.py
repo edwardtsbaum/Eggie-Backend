@@ -36,24 +36,57 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-def verify_token(token: str) -> Optional[str]:
+def create_access_token_for_user(user_identifier: str, identifier_type: str = "email"):
+    """Create access token for user with email or phone number."""
+    data = {"sub": user_identifier, "type": identifier_type}
+    return create_access_token(data)
+
+def verify_token(token: str) -> Optional[dict]:
     """Verify and decode a JWT token."""
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")
-        if email is None:
-            return None
-        return email
+        return payload
     except JWTError:
         return None
 
 def get_current_user_email(token: str) -> str:
     """Get current user email from token with proper error handling."""
-    email = verify_token(token)
-    if email is None:
+    payload = verify_token(token)
+    if payload is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    return email 
+    
+    email: str = payload.get("sub")
+    identifier_type: str = payload.get("type", "email")
+    
+    if email is None or identifier_type != "email":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token format",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return email
+
+def get_current_user_phone(token: str) -> str:
+    """Get current user phone number from token with proper error handling."""
+    payload = verify_token(token)
+    if payload is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    phone: str = payload.get("sub")
+    identifier_type: str = payload.get("type", "email")
+    
+    if phone is None or identifier_type != "phone":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token format",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return phone 

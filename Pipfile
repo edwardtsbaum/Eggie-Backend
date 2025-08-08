@@ -11,6 +11,8 @@ dotenv = "*"
 python-jose = {extras = ["cryptography"], version = "*"}
 passlib = {extras = ["bcrypt"], version = "*"}
 python-multipart = "*"
+httpx = "*"
+pydantic = {extras = ["email"], version = "*"}
 
 [dev-packages]
 
