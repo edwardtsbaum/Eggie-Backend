@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any
 from datetime import datetime
 from bson import ObjectId
-from models.user import PyObjectId
+from user import PyObjectId
 
 class ActivityBase(BaseModel):
     activity_type: str = Field(..., description="Type of activity")

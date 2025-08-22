@@ -22,3 +22,8 @@ client = motor.motor_asyncio.AsyncIOMotorClient(uri)
 database = client.eggie
 
 users = database.users
+
+protocols = database.protocols
+medication_dictionary = database.medication_dictionary
+user_medications = database.user_medications
+

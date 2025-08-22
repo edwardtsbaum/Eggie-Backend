@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer
-from endpoints import auth, activities
+from endpoints import auth, activities, protocols, medications
 from database.mongo import database
 import os
 from dotenv import load_dotenv
@@ -26,8 +26,15 @@ app.add_middleware(
 # Include authentication routes
 app.include_router(auth.router)
 
+# Include protocol routes
+app.include_router(protocols.router)
+
+# Include medication routes
+app.include_router(medications.router)
+
 # Include activity routes
 app.include_router(activities.router)
+
 
 @app.get("/")
 async def root():
