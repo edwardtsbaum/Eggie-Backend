@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 from typing import List, Optional, Dict
 from datetime import datetime, date
 from bson import ObjectId
-from user import PyObjectId
+from .user import PyObjectId
 from enum import Enum
 
 class DosageFrequency(str, Enum):
@@ -34,17 +34,18 @@ class Protocol(BaseModel):
     protocol_name: str = Field(..., description="Auto-generated name like 'Protocol: 2024-01-15 - 01'")
     protocol_number: int = Field(..., description="Sequential number for this user")
     cycle_day_start: int = Field(..., description="What cycle day they're starting on")
-    protocol_start_date: date = Field(..., description="First day of protocol")
+    protocol_start_date: datetime = Field(..., description="First day of protocol")
     protocol_duration_days: int = Field(..., description="How long the protocol lasts")
     medications: List[Medication] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     is_active: bool = Field(default=True)
     
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
+    model_config = {
+        "validate_by_name": True,
+        "arbitrary_types_allowed": True,
+        "json_encoders": {ObjectId: str}
+    }
 
 # New models for API operations
 class ProtocolCreate(BaseModel):
@@ -65,12 +66,13 @@ class ProtocolResponse(BaseModel):
     protocol_name: str
     protocol_number: int
     cycle_day_start: int
-    protocol_start_date: date
+    protocol_start_date: datetime
     protocol_duration_days: int
     medications: List[Medication]
     created_at: datetime
     updated_at: datetime
     is_active: bool
     
-    class Config:
-        json_encoders = {ObjectId: str}
+    model_config = {
+        "json_encoders": {ObjectId: str}
+    }

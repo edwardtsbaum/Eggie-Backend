@@ -1,24 +1,17 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import datetime
-from bson import ObjectId
-from models.user import PyObjectId
 
 class UserMedication(BaseModel):
-    id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
-    user_id: PyObjectId = Field(..., description="Private to this user only")
+    id: str = Field(..., description="Medication ID as string")
+    user_id: str = Field(..., description="User ID as string")
     name: str = Field(..., description="Custom medication name")
-    common_dosages: List[str] = Field(default_factory=list, description="Common dosage forms")
+    common_dosages: List[str] = Field(default_factory=list)
     category: str = Field(..., description="User-defined category")
     description: Optional[str] = Field(default=None)
     is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
-    
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
 
 class UserMedicationCreate(BaseModel):
     name: str = Field(..., description="Custom medication name")

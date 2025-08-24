@@ -3,7 +3,7 @@ from bson import ObjectId
 from typing import List, Optional
 from datetime import datetime, date
 from database.schema.protocol import Protocol, ProtocolCreate, ProtocolUpdate
-from schema.user import PyObjectId
+from database.schema.user import PyObjectId
 
 class ProtocolDatabase:
     def __init__(self, collection: AsyncIOMotorCollection):

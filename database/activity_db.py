@@ -1,5 +1,5 @@
 from motor.motor_asyncio import AsyncIOMotorCollection
-from models.activity import ActivityInDB, ActivityCreate, ActivityResponse
+from database.schema.activity import ActivityInDB, ActivityCreate, ActivityResponse
 from typing import List, Optional
 from datetime import datetime, timedelta
 from bson import ObjectId

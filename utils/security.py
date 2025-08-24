@@ -1,32 +1,43 @@
+import bcrypt
 from datetime import datetime, timedelta
-from typing import Optional
-from jose import JWTError, jwt
-from passlib.context import CryptContext
-from fastapi import HTTPException, status
+import jwt  # This will now import PyJWT correctly
+from typing import Optional, Union
 import os
-from dotenv import load_dotenv
-
-load_dotenv()
-
-# Security configuration
-SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-this-in-production")
+from fastapi import HTTPException, status
+# Get secret key from environment
+SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-here-change-in-production")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-# Password hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+def get_password_hash(password: str) -> str:
+    """Hash a password using bcrypt."""
+    # Convert password to bytes if it's a string
+    if isinstance(password, str):
+        password = password.encode('utf-8')
+    
+    # Generate salt and hash
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(password, salt)
+    
+    # Return as string
+    return hashed.decode('utf-8')
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against its hash."""
-    return pwd_context.verify(plain_password, hashed_password)
+    # Convert both to bytes
+    if isinstance(plain_password, str):
+        plain_password = plain_password.encode('utf-8')
+    
+    if isinstance(hashed_password, str):
+        hashed_password = hashed_password.encode('utf-8')
+    
+    # Verify password
+    return bcrypt.checkpw(plain_password, hashed_password)
 
-def get_password_hash(password: str) -> str:
-    """Hash a password."""
-    return pwd_context.hash(password)
-
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     """Create a JWT access token."""
     to_encode = data.copy()
+    
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
@@ -36,9 +47,9 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-def create_access_token_for_user(user_identifier: str, identifier_type: str = "email"):
-    """Create access token for user with email or phone number."""
-    data = {"sub": user_identifier, "type": identifier_type}
+def create_access_token_for_user(identifier: str, identifier_type: str = "email") -> str:
+    """Create an access token for a specific user."""
+    data = {"sub": identifier, "type": identifier_type}
     return create_access_token(data)
 
 def verify_token(token: str) -> Optional[dict]:
@@ -46,7 +57,9 @@ def verify_token(token: str) -> Optional[dict]:
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload
-    except JWTError:
+    except jwt.ExpiredSignatureError:
+        return None
+    except jwt.JWTError:
         return None
 
 def get_current_user_email(token: str) -> str:

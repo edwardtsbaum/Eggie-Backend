@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request
 from typing import List, Optional
 from database.activity_db import ActivityDatabase
 from database.mongo import database
-from models.activity import ActivityCreate, ActivityResponse
+from database.schema.activity import ActivityCreate, ActivityResponse
 from dependencies.auth import get_current_user
-from models.user import UserInDB
+from database.schema.user import UserInDB
 
 router = APIRouter(prefix="/activities", tags=["activities"])
 

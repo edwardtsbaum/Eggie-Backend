@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any
 from datetime import datetime
 from bson import ObjectId
-from user import PyObjectId
+from .user import PyObjectId
 
 class ActivityBase(BaseModel):
     activity_type: str = Field(..., description="Type of activity")
@@ -19,10 +19,11 @@ class ActivityInDB(ActivityBase):
     ip_address: Optional[str] = Field(default=None, description="IP address for security")
     user_agent: Optional[str] = Field(default=None, description="User agent for security")
 
-    class Config:
-        allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
+    model_config = {
+        "validate_by_name": True,
+        "arbitrary_types_allowed": True,
+        "json_encoders": {ObjectId: str}
+    }
 
 class ActivityResponse(BaseModel):
     id: str
@@ -30,6 +31,7 @@ class ActivityResponse(BaseModel):
     description: str
     created_at: datetime
     metadata: Optional[Dict[str, Any]] = None
-
-    class Config:
-        json_encoders = {ObjectId: str} 
+    
+    model_config = {
+        "json_encoders": {ObjectId: str}
+    } 

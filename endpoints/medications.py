@@ -4,6 +4,9 @@ from utils.user_medications import UserMedicationDB
 from database.schema.user_medications import UserMedicationCreate, UserMedicationUpdate, UserMedication
 from dependencies.auth import get_current_user
 from database.schema.user import UserInDB
+from database.mongo import medication_dictionary, user_medications
+from database.schema.medication_dictionary import MedicationDictionary
+from utils.mongodb_helpers import convert_documents_list
 
 router = APIRouter(prefix="/medications", tags=["medications"])
 
@@ -18,6 +21,34 @@ async def get_user_medications(current_user: UserInDB = Depends(get_current_user
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retrieve medications: {str(e)}"
         )
+    
+@router.get("/global/")
+async def get_global_medications():
+    """Get all global medications - cached by mobile apps."""
+    try:
+        medications_raw = await medication_dictionary.find({"is_active": True}).to_list(None)
+        medications = convert_documents_list(medications_raw)
+        return {"medications": medications}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve global medications: {str(e)}"
+        )
+
+@router.get("/all/")
+async def get_all_medications(current_user: UserInDB = Depends(get_current_user)):
+    """Get both global and custom medications for user."""
+    # Get global medications
+    global_meds = await medication_dictionary.find({"is_active": True}).to_list(None)
+    
+    # Get user's custom medications
+    custom_meds = await user_medications.find({"user_id": current_user.id, "is_active": True}).to_list(None)
+    
+    return {
+        "global_medications": global_meds,
+        "custom_medications": custom_meds,
+        "all_medications": global_meds + custom_meds
+    }
 
 @router.get("/custom/")
 async def get_custom_medications(current_user: UserInDB = Depends(get_current_user)):
@@ -121,3 +152,5 @@ async def get_custom_medication_count(current_user: UserInDB = Depends(get_curre
             detail=f"Failed to get medication count: {str(e)}"
         )
     
+
+

@@ -28,7 +28,9 @@ class UserDatabase:
         
         # Insert into database
         result = await self.collection.insert_one(user_dict)
-        user_dict["_id"] = result.inserted_id
+        
+        # Convert ObjectId to string for Pydantic model
+        user_dict["_id"] = str(result.inserted_id)
         
         return UserInDB(**user_dict)
 
@@ -36,6 +38,8 @@ class UserDatabase:
         """Get user by email - privacy focused query."""
         user_dict = await self.collection.find_one({"email": email})
         if user_dict:
+            # Convert ObjectId to string for Pydantic model
+            user_dict["_id"] = str(user_dict["_id"])
             return UserInDB(**user_dict)
         return None
 
@@ -57,6 +61,25 @@ class UserDatabase:
             {"$set": {"last_login": datetime.utcnow()}}
         )
 
-    async def delete_user(self, user_id: str):
-        """Delete user completely from database."""
-        await self.collection.delete_one({"_id": ObjectId(user_id)})
+    async def delete_user(self, user_id: str, current_user_email: str = None):
+        """Delete user completely from database with additional validation."""
+        try:
+            # Additional security: Verify the user exists and get their email
+            user_to_delete = await self.collection.find_one({"_id": ObjectId(user_id)})
+            
+            if not user_to_delete:
+                raise ValueError("User not found")
+            
+            # Additional validation: If current_user_email is provided, verify it matches
+            if current_user_email and user_to_delete.get("email") != current_user_email:
+                raise ValueError("Unauthorized: Cannot delete another user's account")
+            
+            # Delete the user
+            result = await self.collection.delete_one({"_id": ObjectId(user_id)})
+            
+            if result.deleted_count == 0:
+                raise ValueError("Failed to delete user")
+            
+            return True
+        except Exception as e:
+            raise e

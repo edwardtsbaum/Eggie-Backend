@@ -88,5 +88,21 @@ async def delete_account(
     user_db: UserDatabase = Depends(get_user_db)
 ):
     """Delete user account completely."""
-    await user_db.delete_user(str(current_user.id))
-    return {"message": "Account deleted successfully"}
+    try:
+        # Enhanced security: Pass current user's email for additional validation
+        await user_db.delete_user(
+            str(current_user.id), 
+            current_user_email=current_user.email
+        )
+        
+        return {"message": "Account deleted successfully"}
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete account: {str(e)}"
+        )
