@@ -30,27 +30,28 @@ class PyObjectId(ObjectId):
             return ObjectId(v)
         raise ValueError(f"Invalid ObjectId format: expected string or ObjectId, got {type(v)}")
 
-class UserBase(BaseModel):
-    email: Optional[EmailStr] = None
-    username: Optional[str] = Field(None, min_length=3, max_length=50)
-    phone_number: Optional[str] = None
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
+# New simplified device-based user models
+class UserCreateDevice(BaseModel):
+    """Ultra-simple device registration - just name and device ID."""
+    first_name: str = Field(..., min_length=1, max_length=50, description="User's first name")
+    device_id: str = Field(..., min_length=10, description="Unique device identifier")
 
-class UserCreate(UserBase):
-    password: str = Field(..., min_length=8)
-
-class UserLogin(BaseModel):
-    email: EmailStr = Field(..., description="User's email address")
-    password: str = Field(..., description="User's password")
-
-class UserInDB(UserBase):
+class UserInDB(BaseModel):
+    """User as stored in database."""
     id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
-    hashed_password: str
+    first_name: str
+    username: str  # Auto-generated from first_name
+    device_id: str
+    
+    # Optional backup fields (added later in settings)
+    phone_number: Optional[str] = None
+    email: Optional[EmailStr] = None
+    backup_enabled: bool = False
+    
+    # System fields
     is_active: bool = True
-    is_verified: bool = False
     created_at: datetime = Field(default_factory=datetime.utcnow)
-    last_login: Optional[datetime] = None
+    last_active: Optional[datetime] = None
     
     model_config = {
         "validate_by_name": True,
@@ -58,20 +59,61 @@ class UserInDB(UserBase):
         "json_encoders": {ObjectId: str}
     }
 
-class UserResponse(UserBase):
+class UserResponse(BaseModel):
+    """User data returned to client."""
     id: str
+    first_name: str
+    username: str
+    device_id: str
+    phone_number: Optional[str] = None
+    email: Optional[EmailStr] = None
+    backup_enabled: bool
     is_active: bool
-    is_verified: bool
     created_at: datetime
-    last_login: Optional[datetime] = None
+    last_active: Optional[datetime] = None
     
     model_config = {
         "json_encoders": {ObjectId: str}
     }
 
+# Backup settings models
+class BackupSettings(BaseModel):
+    """Settings for data backup."""
+    phone_number: str = Field(..., min_length=10, max_length=15, description="Phone number for backup")
+
+class BackupResponse(BaseModel):
+    """Response after setting up backup."""
+    backup_enabled: bool
+    phone_number: str
+    message: str
+
+# Legacy models (keep for backward compatibility during transition)
+class UserCreate(BaseModel):
+    """Legacy email/password registration (deprecated)."""
+    email: EmailStr
+    first_name: str = Field(..., min_length=1, max_length=50)
+    password: str = Field(..., min_length=8)
+
+class UserLogin(BaseModel):
+    """Legacy email/password login (deprecated)."""
+    email: EmailStr = Field(..., description="User's email address")
+    password: str = Field(..., description="User's password")
+
+# Token models
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
 
+class TokenResponse(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+    expires_in: int
+    refresh_expires_in: int
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
+
 class TokenData(BaseModel):
-    email: Optional[str] = None
+    device_id: Optional[str] = None  # Changed from email to device_id
+    user_id: Optional[str] = None
