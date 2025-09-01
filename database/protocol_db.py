@@ -19,9 +19,9 @@ class ProtocolDatabase:
         })
         protocol_number = user_protocol_count + 1
         
-        # Generate protocol name
-        current_date = datetime.now().strftime("%Y-%m-%d")
-        protocol_name = f"Protocol: {current_date} - {protocol_number:02d}"
+        # Generate protocol name using protocol start date
+        start_date = protocol_data.protocol_start_date.strftime("%Y-%m-%d")
+        protocol_name = f"Protocol: {start_date} - {protocol_number:02d}"
         
         # Create protocol
         protocol = Protocol(
