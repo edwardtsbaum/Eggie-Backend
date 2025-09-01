@@ -65,12 +65,19 @@ class UserMedicationDB:
         if current_count >= 30:
             raise ValueError("User has reached the maximum limit of 30 custom medications")
         
-        medication = UserMedication(
-            user_id=ObjectId(user_id),
-            **medication_data.dict()
-        )
+        # Create medication document for database insertion
+        medication_doc = {
+            "user_id": ObjectId(user_id),  # Store as ObjectId in database
+            "name": medication_data.name,
+            "common_dosages": medication_data.common_dosages,
+            "category": medication_data.category,
+            "description": medication_data.description,
+            "is_active": True,
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        }
         
-        result = await user_medications.insert_one(medication.dict(by_alias=True))
+        result = await user_medications.insert_one(medication_doc)
         return str(result.inserted_id)
     
     @staticmethod

@@ -7,6 +7,7 @@ from database.schema.user import UserInDB
 from database.mongo import medication_dictionary, user_medications
 from database.schema.medication_dictionary import MedicationDictionary
 from utils.mongodb_helpers import convert_documents_list
+from bson import ObjectId
 
 router = APIRouter(prefix="/medications", tags=["medications"])
 
@@ -39,10 +40,12 @@ async def get_global_medications():
 async def get_all_medications(current_user: UserInDB = Depends(get_current_user)):
     """Get both global and custom medications for user."""
     # Get global medications
-    global_meds = await medication_dictionary.find({"is_active": True}).to_list(None)
+    global_meds_raw = await medication_dictionary.find({"is_active": True}).to_list(None)
+    global_meds = convert_documents_list(global_meds_raw)
     
     # Get user's custom medications
-    custom_meds = await user_medications.find({"user_id": current_user.id, "is_active": True}).to_list(None)
+    custom_meds_raw = await user_medications.find({"user_id": ObjectId(str(current_user.id)), "is_active": True}).to_list(None)
+    custom_meds = convert_documents_list(custom_meds_raw)
     
     return {
         "global_medications": global_meds,
