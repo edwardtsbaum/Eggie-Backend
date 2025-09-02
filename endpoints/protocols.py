@@ -107,7 +107,7 @@ async def get_protocol(
             detail=f"Failed to retrieve protocol: {str(e)}"
         )
 
-@router.put("/{protocol_id}")
+@router.put("/{protocol_id}", response_model=ProtocolResponse)
 async def update_protocol(
     protocol_id: str,
     protocol_update: ProtocolUpdate,
@@ -128,7 +128,26 @@ async def update_protocol(
                 detail="Protocol not found or you don't have permission to edit it"
             )
         
-        return {"message": "Protocol updated successfully"}
+        # Get the updated protocol to return it with the new name
+        updated_protocol = await protocol_db.get_protocol_by_id(protocol_id, str(current_user.id))
+        if not updated_protocol:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Protocol not found after update"
+            )
+        
+        return ProtocolResponse(
+            id=str(updated_protocol.id),
+            protocol_name=updated_protocol.protocol_name,
+            protocol_number=updated_protocol.protocol_number,
+            cycle_day_start=updated_protocol.cycle_day_start,
+            protocol_start_date=updated_protocol.protocol_start_date,
+            protocol_duration_days=updated_protocol.protocol_duration_days,
+            medications=updated_protocol.medications,
+            created_at=updated_protocol.created_at,
+            updated_at=updated_protocol.updated_at,
+            is_active=updated_protocol.is_active
+        )
     except HTTPException:
         raise
     except Exception as e:

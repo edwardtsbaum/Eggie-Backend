@@ -55,11 +55,13 @@ class ProtocolCreate(BaseModel):
     medications: List[Medication] = Field(default_factory=list)
 
 class ProtocolUpdate(BaseModel):
+    protocol_name: Optional[str] = Field(default=None)
     cycle_day_start: Optional[int] = Field(default=None)
     protocol_start_date: Optional[date] = Field(default=None)
     protocol_duration_days: Optional[int] = Field(default=None)
     medications: Optional[List[Medication]] = Field(default=None)
     is_active: Optional[bool] = Field(default=None)
+    updated_at: Optional[datetime] = Field(default=None)
 
 class ProtocolResponse(BaseModel):
     id: str

@@ -56,7 +56,23 @@ class ProtocolDatabase:
     
     async def update_protocol(self, protocol_id: str, user_id: str, update_data: ProtocolUpdate) -> bool:
         """Update a protocol (ensures user can only update their own)"""
+        # Set updated_at timestamp
         update_data.updated_at = datetime.utcnow()
+        
+        # Check if protocol_start_date is being updated - if so, auto-update the protocol name
+        if update_data.protocol_start_date is not None:
+            # Get the current protocol to access protocol_number
+            current_protocol = await self.get_protocol_by_id(protocol_id, user_id)
+            if current_protocol:
+                # Regenerate protocol name with new start date
+                start_date = update_data.protocol_start_date.strftime("%Y-%m-%d")
+                update_data.protocol_name = f"Protocol: {start_date} - {current_protocol.protocol_number:02d}"
+        
+            # Convert date to datetime for MongoDB compatibility
+            update_data.protocol_start_date = datetime.combine(
+                update_data.protocol_start_date, 
+                datetime.min.time()
+            )
         
         result = await self.collection.update_one(
             {
